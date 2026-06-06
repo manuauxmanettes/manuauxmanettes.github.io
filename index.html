@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manu Aux Manettes – Animation événementielle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+</style>
+<style>
+  :root {
+    --bg: #06080f;
+    --card: #0c1020;
+    --card2: #0f1528;
+    --border: #182035;
+    --yellow: #FFE135;
+    --cyan: #00F5D4;
+    --pink: #FF2D78;
+    --purple: #7B2FFF;
+    --white: #EEF0FF;
+    --muted: #5a6a90;
+    --muted2: #8898bb;
+  }
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  body, p, h1, h2, h3, h4, div, span, a {
+    hyphens: none;
+    -webkit-hyphens: none;
+    -ms-hyphens: none;
+  }
+  .hero h1 { overflow-wrap: normal; word-break: normal; }
+
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { overflow-x: hidden; }
+
+  body {
+    background: var(--bg);
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: var(--white);
+    overflow-x: hidden;
+  }
+
+  /* ════════════════════════════════════
+     NOISE + GRID TEXTURE
+  ════════════════════════════════════ */
+  body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  /* ════════════════════════════════════
+     NAV
+  ════════════════════════════════════ */
+  nav {
+    position: fixed; top:0; left:0; right:0; z-index:100;
+    padding: 0 40px;
+    height: 64px;
+    display: flex; align-items:center; justify-content:space-between;
+    background: rgba(6,8,15,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-brand {
+    font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:800;
+    font-size:1.05rem; color:var(--white);
+    text-decoration:none; letter-spacing:-0.02em;
+  }
+  .nav-brand span { color:var(--yellow); }
+
+  .nav-links {
+    display:flex; align-items:center; gap:32px;
+  }
+  .nav-link {
+    font-size:0.82rem; font-weight:500; color:var(--muted);
+    text-decoration:none; transition:color 0.2s;
+  }
+  .nav-link:hover { color:var(--white); }
+
+  .nav-cta {
+    background:var(--cyan); color:#000;
+    font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:700;
+    font-size:0.78rem; padding:8px 18px; border-radius:100px;
+    text-decoration:none; transition:all 0.25s;
+  }
+  .nav-cta:hover { box-shadow:0 0 24px rgba(0,245,212,0.4); }
+
+  .nav-burger { display:none; flex-direction:column; gap:5px; cursor:pointer; padding:4px; }
+  .nav-burger span { width:22px; height:2px; background:var(--white); border-radius:2px; transition:all 0.3s; display:block; }
+
+  /* ════════════════════════════════════
+     HERO
+  ════════════════════════════════════ */
+  .hero {
+    min-height: 100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding: 100px 40px 80px;
+    position:relative; overflow:hidden;
+    text-align:center;
+    max-width: 100vw;
+  }
+
+  .hero-glow-1 {
+    position:absolute; width:600px; height:600px; border-radius:50%;
+    background:radial-gradient(circle, rgba(123,47,255,0.2) 0%, transparent 65%);
+    top:-150px; left:-100px; pointer-events:none;
+    animation: drift1 12s ease-in-out infinite alternate;
+  }
+  .hero-glow-2 {
+    position:absolute; width:500px; height:500px; border-radius:50%;
+    background:radial-gradient(circle, rgba(0,245,212,0.15) 0%, transparent 65%);
+    bottom:-100px; right:-80px; pointer-events:none;
+    animation: drift2 10s ease-in-out infinite alternate;
+  }
+  .hero-glow-3 {
+    position:absolute; width:300px; height:300px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,45,120,0.1) 0%, transparent 65%);
+    top:40%; left:60%; pointer-events:none;
+  }
+
+  @keyframes drift1 { from{transform:translate(0,0)} to{transform:translate(40px,30px)} }
+  @keyframes drift2 { from{transform:translate(0,0)} to{transform:translate(-30px,-20px)} }
+
+  .hero-inner { position:relative; z-index:2; max-width:800px; }
+
+  .hero-badge {
+    display:inline-flex; align-items:center; gap:8px;
+    background:rgba(255,225,53,0.08); border:1px solid rgba(255,225,53,0.2);
+    border-radius:100px; padding:6px 16px;
+    font-size:10px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase;
+    color:var(--yellow); margin-bottom:28px;
+    animation: fadeUp 0.8s ease both;
+  }
+  .hero-badge-dot { width:5px; height:5px; border-radius:50%; background:var(--yellow); animation:pulse 2s infinite; }
+
+  .hero h1 {
+    font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:800;
+    font-size:clamp(1.9rem,4.5vw,4.8rem);
+    line-height:1.0; letter-spacing:-0.04em;
+    margin-bottom:20px;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+  .hero h1 .line1 { display:block; color:var(--white); }
+  .hero h1 .line2 {
+    display:block;
+    background:linear-gradient(90deg, var(--cyan) 0%, var(--purple) 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+
+  .hero-sub {
+    font-size:1.05rem; color:var(--muted2); line-height:1.75;
+    max-width:480px; margin:0 auto 36px;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .hero-actions {
+    display:flex; gap:14px; justify-content:center; flex-wrap:wrap;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+  .btn-primary {
+    background:var(--cyan); color:#000;
+    font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:800;
+    font-size:0.9rem; padding:14px 28px; border-radius:100px;
+    text-decoration:none; transition:all 0.25s;
+    display:flex; align-items:center; gap:8px;
+  }
+  .btn-primary:hover { box-shadow:0 0 36px rgba(0,245,212,0.4); transform:translateY(-2px); }
+  .btn-secondary {
+    background:transparent; color:var(--white);
+    font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:700;
+    font-size:0.9rem; padding:14px 28px; border-radius:100px;
+    text-decoration:none; border:1.5px solid var(--border);
+    transition:all 0.25s; display:flex; align-items:center; gap:8px;
+  }
+  .btn-secondary:hover { border-color:var(--white); background:rgba(255,255,255,0.04); }
+
+  .hero-scroll {
+    position:absolute; bottom:40px; left:50%; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--white);
+    opacity:0.6;
+    animation: fadeUp 1s 0.6s ease both;
+    z-index:10;
+  }
+  .scroll-line { width:1px; height:32px; background:linear-gradient(to bottom, var(--muted), transparent); animation:scrollLine 2s ease-in-out infinite; }
+  @keyframes scrollLine { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+  /* ════════════════════════════════════
+     SECTIONS COMMON
+  ════════════════════════════════════ */
+  section { position:relative; z-index:2; }
+
+  .section-inner {
+    max-width:1060px; margin:0 auto;
+    padding: 96px 40px;
+  }
+
+  .section-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:10px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase;
+    margin-bottom:16px;
+  }
+  .section-badge::before { content:''; width:20px; height:1px; }
+
+  .section-title {
+    font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:800;
+    font-size:clamp(2rem,4vw,3rem); letter-spacing:-0.03em;
+    line-height:1.1; margin-bottom:12px;
+  }
+  .section-sub { color:var(--muted2); font-size:1rem; line-height:1.7; max-width:500px; }
+
+  .section-head { margin-bottom:52px; }
+
+  /* ════════════════════════════════════
+     ACTIVITIES
+  ════════════════════════════════════ */
+  #animations { background:var(--bg); }
+
+  .section-badge.yellow { color:var(--yellow); }
+  .section-badge.yellow::before { background:var(--yellow); }
+
+  .act-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:auto auto;
+    gap:16px;
+  }
+
+  .act-card {
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:36px;
+    position:relative; overflow:hidden;
+    transition:transform 0.3s, border-color 0.3s;
+  }
+  .act-card:hover { transform:translateY(-4px); }
+
+  .act-card.quiz   { grid-column:1; }
+  .act-card.karaoke{ grid-column:2; }
+  .act-card.dj     { grid-column:1/-1; display:grid; grid-template-columns:1fr auto; align-items:center; gap:40px; }
+
+  .act-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:20px 0 0 20px; }
+  .act-card.quiz::before    { background:var(--yellow); }
+  .act-card.karaoke::before { background:var(--cyan); }
+  .act-card.dj::before      { background:var(--pink); }
+
+  .act-card:hover.quiz    { border-color:rgba(255,225,53,0.3); }
+  .act-card:hover.karaoke { border-color:rgba(0,245,212,0.3); }
+  .act-card:hover.dj      { border-color:rgba(255,45,120,0.3); }
+
+  .act-glow { position:absolute; width:200px; height:200px; border-radius:50%; filter:blur(60px); pointer-events:none; top:-50px; right:-50px; opacity:0; transition:opacity 0.4s; }
+  .act-card:hover .act-glow { opacity:1; }
+  .quiz    .act-glow { background:rgba(255,225,53,0.08); }
+  .karaoke .act-glow { background:rgba(0,245,212,0.08); }
+  .dj      .act-glow { background:rgba(255,45,120,0.08); }
+
+  .act-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; }
+
+  .act-icon {
+    width:52px; height:52px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem;
+  }
+  .quiz    .act-icon { background:rgba(255,225,53,0.1); }
+  .karaoke .act-icon { background:rgba(0,245,212,0.1); }
+  .dj      .act-icon { background:rgba(255,45,120,0.1); }
+
+  .act-tag {
+    font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+    padding:4px 12px; border-radius:100px; border:1px solid;
+  }
+  .quiz    .act-tag { color:var(--yellow); border-color:rgba(255,225,53,0.25); background:rgba(255,225,53,0.07); }
+  .karaoke .act-tag { color:var(--cyan);   border-color:rgba(0,245,212,0.25);  background:rgba(0,245,212,0.07); }
+  .dj      .act-tag { color:var(--pink);   border-color:rgba(255,45,120,0.25); background:rgba(255,45,120,0.07); }
+
+  .act-title {
+    font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:800;
+    font-size:1.6rem; line-height:1.1; letter-spacing:-0.02em;
+    margin-bottom:10px;
+  }
+  .quiz    .act-title { color:var(--yellow); }
+  .karaoke .act-title { color:var(--cyan); }
+  .dj      .act-title { color:var(--pink); }
+
+  .act-desc { color:var(--muted2); font-size:0.88rem; line-height:1.75; margin-bottom:20px; }
+
+  .pills { display:flex; flex-wrap:wrap; gap:8px; }
+  .pill { font-size:11px; font-weight:500; padding:5px 12px; border-radius:100px; }
+  .quiz    .pill { background:rgba(255,225,53,0.08); color:var(--yellow); }
+  .karaoke .pill { background:rgba(0,245,212,0.08);  color:var(--cyan); }
+  .dj      .pill { background:rgba(255,45,120,0.08); color:var(--pink); }
+
+  .dj-side {
+    font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:800;
+    font-size:0.65rem; letter-spacing:0.3em; text-transform:uppercase;
+    color:rgba(255,45,120,0.3); writing-mode:vertical-rl;
+    flex-shrink:0;
+  }
+
+  /* ════════════════════════════════════
+     WHY US
+  ════════════════════════════════════ */
+  #pourquoi {
+    background:linear-gradient(180deg, var(--bg) 0%, #0a0d1c 100%);
+  }
+
+  .section-badge.cyan { color:var(--cyan); }
+  .section-badge.cyan::before { background:var(--cyan); }
+
+  .why-layout { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start; }
+
+  .why-quote {
+    background:var(--card2);
+    border:1px solid var(--border);
+    border-left:3px solid var(--cyan);
+    border-radius:16px;
+    padding:32px;
+    margin-bottom:32px;
+    position:relative;
+  }
+  .why-quote::before {
+    content:'"'; position:absolute; top:-16px; left:24px;
+    font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:4rem; color:var(--cyan);
+    opacity:0.3; line-height:1;
+  }
+  .why-question {
+    font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:800;
+    font-size:1.15rem; color:var(--white); margin-bottom:14px;
+  }
+  .why-text { font-size:0.9rem; color:var(--muted2); line-height:1.8; }
+  .why-text em { color:var(--white); font-style:normal; font-weight:600; }
+
+  .why-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  .why-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:20px;
+    transition:border-color 0.2s, transform 0.2s;
+  }
+  .why-card:hover { border-color:rgba(0,245,212,0.2); transform:translateY(-2px); }
+  .why-icon { font-size:1.4rem; margin-bottom:10px; }
+  .why-title { font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:700; font-size:0.88rem; color:var(--white); margin-bottom:6px; }
+  .why-desc { font-size:0.78rem; color:var(--muted); line-height:1.65; }
+
+  /* ════════════════════════════════════
+     CONTACT / DEVIS
+  ════════════════════════════════════ */
+  #contact { background:var(--bg); }
+
+  .section-badge.pink { color:var(--pink); }
+  .section-badge.pink::before { background:var(--pink); }
+
+  .contact-layout { display:grid; grid-template-columns:1fr 1.4fr; gap:48px; align-items:start; }
+
+  .contact-info { }
+  .contact-info-title { font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:800; font-size:1.1rem; color:var(--white); margin-bottom:20px; }
+
+  .contact-item {
+    display:flex; align-items:center; gap:14px;
+    padding:16px; border-radius:12px;
+    background:var(--card); border:1px solid var(--border);
+    margin-bottom:10px; text-decoration:none;
+    transition:border-color 0.2s;
+  }
+  .contact-item:hover { border-color:rgba(0,245,212,0.3); }
+  .contact-item-icon { font-size:1.2rem; width:36px; text-align:center; }
+  .contact-item-label { font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+  .contact-item-val { font-size:0.88rem; font-weight:600; color:var(--white); }
+
+  .contact-note {
+    margin-top:20px;
+    background:rgba(0,245,212,0.05); border:1px solid rgba(0,245,212,0.15);
+    border-radius:12px; padding:16px;
+    font-size:0.82rem; color:var(--muted2); line-height:1.65;
+    font-style:italic;
+  }
+  .contact-note strong { color:var(--cyan); font-style:normal; }
+
+  /* FORM */
+  .form-card {
+    background:var(--card2); border:1px solid var(--border);
+    border-radius:20px; padding:36px;
+    position:relative; overflow:hidden;
+  }
+  .form-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, var(--cyan), var(--purple), var(--pink));
+  }
+
+  .form-label {
+    display:block; font-size:10px; font-weight:700; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:10px;
+  }
+
+  .type-grid, .act-select-grid {
+    display:grid; gap:10px; margin-bottom:22px;
+  }
+  .type-grid { grid-template-columns:1fr 1fr; }
+  .act-select-grid { grid-template-columns:repeat(3,1fr); }
+
+  .sel-pill input { display:none; }
+  .sel-pill label {
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    padding:12px 8px; background:rgba(255,255,255,0.02);
+    border:1.5px solid var(--border); border-radius:12px;
+    cursor:pointer; transition:all 0.2s; text-align:center;
+  }
+  .sel-pill label:hover { border-color:rgba(0,245,212,0.3); background:rgba(0,245,212,0.03); }
+  .sel-pill input:checked + label {
+    border-color:var(--cyan); background:rgba(0,245,212,0.07);
+    box-shadow:0 0 16px rgba(0,245,212,0.1);
+  }
+  .sel-pill .spe { font-size:1.2rem; }
+  .sel-pill .sname { font-size:0.75rem; font-weight:600; color:var(--white); line-height:1.2; }
+  .sel-pill .ssub { font-size:0.62rem; color:var(--muted); }
+
+  .type-pill label { flex-direction:row; justify-content:center; gap:10px; padding:12px 16px; }
+
+  .fields-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  .field-full { grid-column:1/-1; }
+
+  .field { display:flex; flex-direction:column; gap:6px; }
+  .field label { font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); }
+  .field input, .field textarea {
+    background:rgba(255,255,255,0.03); border:1.5px solid var(--border);
+    border-radius:10px; padding:11px 14px;
+    font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:0.88rem; color:var(--white);
+    outline:none; width:100%; transition:border-color 0.2s, box-shadow 0.2s;
+  }
+  .field input::placeholder, .field textarea::placeholder { color:var(--muted); }
+  .field input:focus, .field textarea:focus {
+    border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,245,212,0.08);
+  }
+  .field textarea { resize:vertical; min-height:80px; }
+
+  .slider-wrap { display:flex; flex-direction:column; gap:8px; }
+  .slider-top { display:flex; justify-content:space-between; }
+  .slider-val { font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:800; font-size:1rem; color:var(--cyan); }
+  input[type=range] {
+    width:100%; height:4px; border-radius:2px;
+    background:var(--border); outline:none;
+    -webkit-appearance:none; border:none; padding:0; box-shadow:none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+    background:var(--cyan); cursor:pointer;
+    box-shadow:0 0 8px rgba(0,245,212,0.5);
+  }
+  .slider-labels { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); }
+
+  .submit-btn {
+    width:100%; padding:14px; background:var(--cyan);
+    border:none; border-radius:12px;
+    font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:800; font-size:0.9rem; color:#000;
+    cursor:pointer; margin-top:20px;
+    transition:all 0.25s; display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .submit-btn:hover { box-shadow:0 0 30px rgba(0,245,212,0.35); transform:translateY(-1px); }
+
+  /* SUCCESS */
+  .success { display:none; text-align:center; padding:40px 20px; }
+  .success.show { display:block; animation:fadeUp 0.5s ease; }
+  .success-icon { font-size:3rem; margin-bottom:16px; }
+  .success h3 { font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:800; font-size:1.4rem; margin-bottom:10px; }
+  .success p { color:var(--muted2); font-size:0.88rem; line-height:1.7; }
+  .success .back-link { display:inline-block; margin-top:20px; color:var(--cyan); font-weight:600; font-size:0.85rem; cursor:pointer; }
+
+  /* ════════════════════════════════════
+     FOOTER
+  ════════════════════════════════════ */
+  footer {
+    background:var(--card); border-top:1px solid var(--border);
+    position:relative; z-index:2;
+  }
+  .footer-inner {
+    max-width:1060px; margin:0 auto;
+    padding:48px 40px;
+    display:grid; grid-template-columns:1fr auto; align-items:center; gap:40px;
+  }
+  .footer-brand { font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-weight:800; font-size:1.1rem; margin-bottom:8px; }
+  .footer-brand span { color:var(--yellow); }
+  .footer-slogan { font-size:0.82rem; color:var(--muted); font-style:italic; }
+
+  .footer-links { display:flex; gap:32px; }
+  .footer-link { font-size:0.82rem; color:var(--muted); text-decoration:none; transition:color 0.2s; }
+  .footer-link:hover { color:var(--white); }
+
+  .footer-bottom {
+    max-width:1060px; margin:0 auto;
+    padding:16px 40px;
+    border-top:1px solid var(--border);
+    font-size:0.72rem; color:var(--muted);
+  }
+
+  /* ════════════════════════════════════
+     ANIMATIONS
+  ════════════════════════════════════ */
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(24px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  @keyframes pulse {
+    0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)}
+  }
+
+  .reveal {
+    opacity:0; transform:translateY(32px);
+    transition:opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+
+  /* ════════════════════════════════════
+     RESPONSIVE
+  ════════════════════════════════════ */
+
+  /* ── MEDIUM ── */
+  @media (max-width:1024px) {
+    .hero h1 { font-size: clamp(1.9rem, 4vw, 3.5rem); }
+    .act-grid { grid-template-columns:1fr !important; }
+    .act-card { grid-column:1 !important; }
+    .dj-side { display:none !important; }
+  }
+
+  /* ── TABLET ── */
+  @media (max-width:900px) {
+    .why-layout { grid-template-columns:1fr; gap:32px; }
+    .contact-layout { grid-template-columns:1fr; gap:32px; }
+    .act-grid { grid-template-columns:1fr !important; }
+    .act-card { grid-column:1 !important; grid-template-columns:1fr !important; }
+    .act-card.dj { grid-column:1 !important; grid-template-columns:1fr !important; }
+    .dj-side { display:none !important; }
+    .section-inner { padding:72px 32px; }
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width:640px) {
+    nav { padding:0 16px; }
+    .nav-links { display:none; }
+    .nav-links.open {
+      display:flex; flex-direction:column;
+      position:fixed; top:64px; left:0; right:0;
+      background:rgba(6,8,15,0.98);
+      backdrop-filter:blur(16px);
+      padding:24px 20px; gap:20px;
+      border-bottom:1px solid var(--border); z-index:99;
+    }
+    .nav-link { font-size:1rem; padding:8px 0; border-bottom:1px solid var(--border); }
+    .nav-cta { text-align:center; padding:12px; border-radius:10px; }
+    .nav-burger { display:flex; }
+
+    .hero { padding:90px 20px 70px; }
+    .hero h1 { font-size:clamp(1.6rem,7.5vw,2.8rem); }
+    .hero-sub { font-size:0.92rem; }
+    .hero-actions { flex-direction:column; align-items:center; }
+    .btn-primary, .btn-secondary { width:100%; max-width:320px; justify-content:center; }
+
+    .section-inner { padding:56px 20px; }
+    .section-title { font-size:clamp(1.7rem,7vw,2.5rem); }
+
+    .act-card { padding:24px 20px; }
+    .act-title { font-size:1.3rem; }
+    .act-desc { font-size:0.85rem; }
+    .pill { font-size:10px; padding:4px 10px; }
+
+    .why-grid { grid-template-columns:1fr 1fr; gap:10px; }
+    .why-quote { padding:24px 20px; }
+    .why-card { padding:16px; }
+
+    .form-card { padding:24px 18px; }
+    .type-grid { grid-template-columns:1fr 1fr; }
+    .act-select-grid { grid-template-columns:1fr 1fr; }
+    .sel-pill:last-child:nth-child(odd) { grid-column:1/-1; }
+    .fields-grid { grid-template-columns:1fr; }
+    .field-full { grid-column:1; }
+    .contact-item { padding:14px; }
+
+    .footer-inner { grid-template-columns:1fr; gap:20px; padding:32px 20px; }
+    .footer-links { flex-wrap:wrap; gap:14px; }
+    .footer-bottom { padding:14px 20px; font-size:0.7rem; }
+  }
+
+  @media (max-width:640px) {
+    .contact-cards-grid { grid-template-columns:1fr !important; }
+  }
+
+  /* ── VERY SMALL ── */
+  @media (max-width:380px) {
+    .hero h1 { font-size:2rem; }
+    .type-grid { grid-template-columns:1fr; }
+    .act-select-grid { grid-template-columns:1fr; }
+    nav { height:56px; }
+    .nav-links.open { top:56px; }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav>
+  <a class="nav-brand" href="#hero">Manu <span>Aux Manettes</span></a>
+  <div class="nav-links" id="navLinks">
+    <a class="nav-link" href="#animations">Animations</a>
+    <a class="nav-link" href="#pourquoi">Pourquoi nous</a>
+    <a class="nav-link" href="#contact">Contact</a>
+    <a class="nav-cta" href="#devis">Demander un devis</a>
+  </div>
+  <div class="nav-burger" id="burger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section id="hero">
+  <div class="hero">
+    <div class="hero-glow-1"></div>
+    <div class="hero-glow-2"></div>
+    <div class="hero-glow-3"></div>
+    <div class="hero-inner">
+      <div class="hero-badge"><span class="hero-badge-dot"></span> Animation événementielle</div>
+      <h1>
+        <span class="line1">Vivez l'événement.</span>
+        <span class="line2">Nous créons le souvenir.</span>
+      </h1>
+      <p class="hero-sub">Des animations sur-mesure pour vos moments qui comptent, vos équipes et vos séminaires.</p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="#animations">
+          Découvrir nos animations
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a class="btn-secondary" href="#contact">Nous contacter</a>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <span>Défiler</span>
+      <div class="scroll-line"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ ANIMATIONS ═══════════ -->
+<section id="animations">
+  <div class="section-inner">
+    <div class="section-head reveal">
+      <div class="section-badge yellow">✦ Nos animations</div>
+      <h2 class="section-title">Ce qu'on fait,<br>on le fait bien.</h2>
+      <p class="section-sub">Trois expériences uniques, toutes conçues pour marquer les esprits et souder les gens.</p>
+    </div>
+
+    <div class="act-grid">
+
+      <!-- QUIZ BLIND TEST -->
+      <div class="act-card quiz reveal">
+        <div class="act-glow"></div>
+        <div class="act-top">
+          <div class="act-icon">🎮</div>
+          <span class="act-tag">Par équipes</span>
+        </div>
+        <h3 class="act-title">Quiz &amp; Blind Test</h3>
+        <p class="act-desc">Des équipes, des télécommandes, une scène. Questions culture générale, thématiques métier ou 100 % musicales, le classement s'emballe en direct, les défis surprise font basculer la partie, chaque thème personnalisé à vos couleurs.</p>
+        <div class="pills">
+          <span class="pill">🧠 Quiz culture générale</span>
+          <span class="pill">🎵 Blind Test musical</span>
+          <span class="pill">📡 Télécommandes individuelles</span>
+          <span class="pill">🏆 Classement équipes live</span>
+          <span class="pill">⚡ Défis &amp; rounds surprise</span>
+          <span class="pill">🎨 100 % personnalisable</span>
+        </div>
+      </div>
+
+      <!-- KARAOKÉ -->
+      <div class="act-card karaoke reveal" style="transition-delay:0.1s">
+        <div class="act-glow"></div>
+        <div class="act-top">
+          <div class="act-icon">🎤</div>
+          <span class="act-tag">Team Building</span>
+        </div>
+        <h3 class="act-title">Karaoké Professionnel</h3>
+        <p class="act-desc">Qui chante juste ? Qui assure sous pression ? N'oubliez pas les paroles, tenez la note, relevez les défis lancés par la salle, révélez les talents cachés de votre équipe.</p>
+        <div class="pills">
+          <span class="pill">🎙️ Scène &amp; sono pro</span>
+          <span class="pill">🎼 Catalogue sur-mesure</span>
+          <span class="pill">🔥 Défis &amp; duels</span>
+          <span class="pill">😂 Fous rires garantis</span>
+          <span class="pill">👥 Tous niveaux bienvenus</span>
+        </div>
+      </div>
+
+      <!-- DJ SET -->
+      <div class="act-card dj reveal" style="transition-delay:0.2s">
+        <div class="act-glow"></div>
+        <div>
+          <div class="act-top">
+            <div class="act-icon">🎧</div>
+            <span class="act-tag">Mariage &amp; Événements privés</span>
+          </div>
+          <h3 class="act-title">DJ Set</h3>
+          <p class="act-desc">Le bon son au bon moment, c'est tout l'art de faire d'une soirée un souvenir. De la cérémonie à la piste de danse, construire une énergie qui monte crescendo : les invités ne voient pas le temps passer, ils vibrent, ils revivent la nuit pendant des années.</p>
+          <div class="pills">
+            <span class="pill">💍 Cérémonie &amp; Vin d'honneur</span>
+            <span class="pill">🌙 Soirée &amp; After</span>
+            <span class="pill">🔊 Son &amp; lumière pro</span>
+            <span class="pill">🎚️ Mix live exclusif</span>
+          </div>
+        </div>
+        <div class="dj-side">DJ SET</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ POURQUOI ═══════════ -->
+<section id="pourquoi">
+  <div class="section-inner">
+    <div class="why-layout">
+      <div>
+        <div class="section-head reveal">
+          <div class="section-badge cyan">✦ Pourquoi nous</div>
+          <h2 class="section-title">Ce qu'on ne peut<br>pas vous montrer…</h2>
+        </div>
+        <div class="why-quote reveal">
+          <div class="why-question">Un book de références ?</div>
+          <p class="why-text">On pourrait. Mais ce qui compte vraiment, c'est ce que vous allez vivre. Chaque événement qu'on anime, nous le préparons comme si c'était le nôtre. <em>Exigeants sur les détails, à l'écoute de vos besoins,</em> toujours là pour trouver une solution. Le reste, c'est vous qui en parlerez, comme à chaque fois.</p>
+        </div>
+      </div>
+      <div class="why-grid reveal" style="transition-delay:0.1s">
+        <div class="why-card">
+          <div class="why-icon">🎯</div>
+          <div class="why-title">À l'écoute &amp; sur-mesure</div>
+          <div class="why-desc">Nous prenons le temps de comprendre vos besoins, votre équipe, l'ambiance souhaitée. Chaque événement est unique, nous le traitons comme tel.</div>
+        </div>
+        <div class="why-card">
+          <div class="why-icon">⚡</div>
+          <div class="why-title">Réactifs &amp; fiables</div>
+          <div class="why-desc">Matériel pro, ponctualité, engagement. Contactez-nous, nous trouverons une solution.</div>
+        </div>
+        <div class="why-card">
+          <div class="why-icon">😄</div>
+          <div class="why-title">Humour &amp; bienveillance</div>
+          <div class="why-desc">Sérieux sans se prendre au sérieux. Nous mettons tout le monde à l'aise, des timides aux plus festifs.</div>
+        </div>
+        <div class="why-card">
+          <div class="why-icon">🤝</div>
+          <div class="why-title">Pro &amp; humain</div>
+          <div class="why-desc">Un interlocuteur direct, une relation de confiance du premier contact jusqu'à la fin de soirée.</div>
+        </div>
+        <div class="why-card">
+          <div class="why-icon">🎨</div>
+          <div class="why-title">100 % personnalisable</div>
+          <div class="why-desc">Thèmes, questions, ambiance, durée : tout s'adapte à votre entreprise, vos valeurs, votre moment.</div>
+        </div>
+        <div class="why-card">
+          <div class="why-icon">🔄</div>
+          <div class="why-title">Adaptabilité totale</div>
+          <div class="why-desc">Petit comité ou grande entreprise, nous trouvons toujours la formule qui vous ressemble.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ DEVIS ═══════════ -->
+<section id="devis">
+  <div class="section-inner">
+    <div class="section-head reveal">
+      <div class="section-badge pink">✦ Demande de devis</div>
+      <h2 class="section-title">Parlons de<br>votre projet.</h2>
+      <p class="section-sub">Dites-nous en plus, nous nous occupons du reste.</p>
+    </div>
+
+    <div style="max-width:640px; margin:0 auto;">
+      <div class="form-card reveal">
+        <div class="success" id="successMsg">
+          <div class="success-icon">🎉</div>
+          <h3>Message envoyé !</h3>
+          <p>Merci pour votre message. Nous reviendrons vers vous très vite.<br><br>
+          En attendant, appelez-nous au <strong style="color:var(--cyan)">06 84 20 23 99</strong></p>
+          <a class="back-link" onclick="resetForm()">← Envoyer une autre demande</a>
+        </div>
+
+        <form id="contactForm" action="https://formspree.io/f/xykvpekz" method="POST">
+
+          <label class="form-label">Vous êtes ?</label>
+          <div class="type-grid" style="margin-bottom:22px;">
+            <div class="sel-pill type-pill">
+              <input type="radio" name="type_client" id="type1" value="Entreprise" required>
+              <label for="type1"><span class="spe">🏢</span><div><div class="sname">Entreprise</div><div class="ssub">Séminaire, team building</div></div></label>
+            </div>
+            <div class="sel-pill type-pill">
+              <input type="radio" name="type_client" id="type2" value="Particulier">
+              <label for="type2"><span class="spe">👤</span><div><div class="sname">Particulier</div><div class="ssub">Mariage, événement privé</div></div></label>
+            </div>
+          </div>
+
+          <label class="form-label">Quelle animation vous intéresse ?</label>
+          <div class="act-select-grid" style="margin-bottom:22px;">
+            <div class="sel-pill">
+              <input type="radio" name="activite" id="act1" value="Quiz & Blind Test" required>
+              <label for="act1"><span class="spe">🎮</span><span class="sname">Quiz &amp; Blind Test</span><span class="ssub">Par équipes</span></label>
+            </div>
+            <div class="sel-pill">
+              <input type="radio" name="activite" id="act2" value="Karaoké Professionnel">
+              <label for="act2"><span class="spe">🎤</span><span class="sname">Karaoké Pro</span><span class="ssub">Team Building</span></label>
+            </div>
+            <div class="sel-pill">
+              <input type="radio" name="activite" id="act3" value="DJ Set">
+              <label for="act3"><span class="spe">🎧</span><span class="sname">DJ Set</span><span class="ssub">Mariage &amp; Privé</span></label>
+            </div>
+          </div>
+
+          <div class="fields-grid">
+            <div class="field">
+              <label for="nom">Nom &amp; Prénom *</label>
+              <input type="text" id="nom" name="nom" placeholder="Marie Dupont" required>
+            </div>
+            <div class="field" id="entrepriseField">
+              <label for="entreprise">Entreprise</label>
+              <input type="text" id="entreprise" name="entreprise" placeholder="Acme Corp">
+            </div>
+            <div class="field">
+              <label for="tel">Téléphone *</label>
+              <input type="tel" id="tel" name="tel" placeholder="06 12 34 56 78" required>
+            </div>
+            <div class="field">
+              <label for="email">Email *</label>
+              <input type="email" id="email" name="email" placeholder="marie@exemple.fr" required>
+            </div>
+            <div class="field">
+              <label for="date">Date envisagée</label>
+              <input type="date" id="date" name="date">
+            </div>
+            <div class="field">
+              <label>Nombre de participants</label>
+              <div class="slider-wrap">
+                <div class="slider-top">
+                  <span style="font-size:10px;color:var(--muted);">Participants</span>
+                  <span class="slider-val" id="sliderVal">20</span>
+                </div>
+                <input type="range" id="participants" name="participants" min="5" max="200" value="20" step="5" oninput="document.getElementById('sliderVal').textContent=this.value">
+                <div class="slider-labels"><span>5</span><span>50</span><span>100</span><span>200+</span></div>
+              </div>
+            </div>
+            <div class="field field-full">
+              <label for="message">Votre projet en quelques mots</label>
+              <textarea id="message" name="message" placeholder="Contexte, ambiance souhaitée, contraintes particulières..."></textarea>
+            </div>
+          </div>
+
+          <input type="hidden" name="_subject" value="Nouvelle demande – Manu Aux Manettes">
+          <input type="text" name="_gotcha" style="display:none">
+
+          <button type="submit" class="submit-btn">
+            Envoyer ma demande
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ CONTACT ═══════════ -->
+<section id="contact" style="background: linear-gradient(180deg, var(--bg) 0%, #0a0d1c 100%);">
+  <div class="section-inner">
+    <div class="section-head reveal">
+      <div class="section-badge cyan">✦ Contact</div>
+      <h2 class="section-title">On est là,<br>écrivez-nous.</h2>
+      <p class="section-sub">Contactez-nous, nous trouverons une solution.</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:700px; margin:0 auto;" class="reveal contact-cards-grid">
+      <a class="contact-item" href="tel:0684202399" style="text-decoration:none; display:flex; align-items:center; gap:14px; padding:24px; border-radius:16px; background:var(--card); border:1px solid var(--border); transition:border-color 0.2s;">
+        <div style="width:48px;height:48px;border-radius:12px;background:rgba(255,225,53,0.1);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">📞</div>
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Téléphone</div>
+          <div style="font-size:1rem;font-weight:700;color:var(--white);">06 84 20 23 99</div>
+        </div>
+      </a>
+      <a class="contact-item" href="mailto:e.a.freelance@gmail.com" style="text-decoration:none; display:flex; align-items:center; gap:14px; padding:24px; border-radius:16px; background:var(--card); border:1px solid var(--border); transition:border-color 0.2s;">
+        <div style="width:48px;height:48px;border-radius:12px;background:rgba(0,245,212,0.1);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">✉️</div>
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Email</div>
+          <div style="font-size:0.88rem;font-weight:700;color:var(--white);">e.a.freelance@gmail.com</div>
+        </div>
+      </a>
+    </div>
+
+    <div class="reveal" style="max-width:700px;margin:20px auto 0;">
+      <div style="background:linear-gradient(135deg,rgba(0,245,212,0.06),rgba(123,47,255,0.08));border:1px solid rgba(0,245,212,0.2);border-radius:16px;padding:28px 32px;text-align:center;">
+        <div style="font-size:0.92rem;color:var(--muted2);line-height:1.8;">Séminaire, team building, mariage ou autre projet d'animation, nous étudions chaque demande avec attention.<br><br><strong style="color:var(--cyan);font-size:1rem;">Contactez-nous, nous trouverons une solution.</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">Manu <span>Aux Manettes</span></div>
+      <div class="footer-slogan">Vivez l'événement. Nous créons le souvenir.</div>
+    </div>
+    <div class="footer-links">
+      <a class="footer-link" href="#animations">Animations</a>
+      <a class="footer-link" href="#pourquoi">Pourquoi nous</a>
+      <a class="footer-link" href="#contact">Contact</a>
+      <a class="footer-link" href="tel:0684202399">06 84 20 23 99</a>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2025 Manu Aux Manettes · e.a.freelance@gmail.com</div>
+</footer>
+
+<script>
+  // ── MOBILE MENU ──
+  function toggleMenu() {
+    document.getElementById('navLinks').classList.toggle('open');
+  }
+  document.querySelectorAll('.nav-link, .nav-cta').forEach(function(el) {
+    el.addEventListener('click', function() {
+      document.getElementById('navLinks').classList.remove('open');
+    });
+  });
+
+  // ── SCROLL REVEAL ──
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) { e.target.classList.add('visible'); }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
+
+  // ── TYPE CLIENT TOGGLE ──
+  document.querySelectorAll('input[name="type_client"]').forEach(function(r) {
+    r.addEventListener('change', function() {
+      var f = document.getElementById('entrepriseField');
+      if (this.value === 'Entreprise') { f.style.display='flex'; }
+      else { f.style.display='none'; document.getElementById('entreprise').value=''; }
+    });
+  });
+
+  // ── FORM SUBMIT ──
+  var form = document.getElementById('contactForm');
+  var success = document.getElementById('successMsg');
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var btn = form.querySelector('.submit-btn');
+    btn.textContent = 'Envoi en cours...'; btn.disabled = true;
+    try {
+      var res = await fetch(form.action, { method:'POST', body:new FormData(form), headers:{'Accept':'application/json'} });
+      if (res.ok) { form.style.display='none'; success.classList.add('show'); }
+      else { alert('Une erreur est survenue. Appelez-nous au 06 84 20 23 99.'); btn.textContent='Envoyer ma demande'; btn.disabled=false; }
+    } catch(err) { alert('Une erreur est survenue. Appelez-nous au 06 84 20 23 99.'); btn.textContent='Envoyer ma demande'; btn.disabled=false; }
+  });
+
+  function resetForm() {
+    form.reset(); form.style.display='block'; success.classList.remove('show');
+    document.getElementById('sliderVal').textContent='20';
+  }
+</script>
+</body>
+</html>
